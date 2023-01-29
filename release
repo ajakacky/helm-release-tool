@@ -3,5 +3,5 @@
 path="chart-1"
 commit=$(echo $(git log -L5,5:$path/Chart.yaml -n 1) | awk '{print $2}')
 echo $commit
-commits=$(git rev-list ^$(echo $(git log -L5,5:$path/Chart.yaml -n 1) | awk '{print $2}')..HEAD)
+commits=$(git rev-list $(echo $(git log -L5,5:$path/Chart.yaml -n 1 --no-abbrev-commit) | awk '{print $2}')^..HEAD)
 echo $commits
