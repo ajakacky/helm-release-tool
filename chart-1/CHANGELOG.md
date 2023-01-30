@@ -2,5 +2,6 @@
 
 ## Other Changes
 
+- **ci** add new tool [(06fbba39)](https://github.com/ajakacky/helm-release-tool/commit/06fbba39088961f9449b83fe1209a7748bc2dd25)
 - **ci** Add major minor patch capability [(d906c4eb)](https://github.com/ajakacky/helm-release-tool/commit/d906c4eb747ff10e3c195b1c6dffa3e8393c4bf5)
 

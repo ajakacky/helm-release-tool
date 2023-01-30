@@ -4,5 +4,6 @@ import subprocess, os, yaml
 with open("release.yaml", "r") as f:
     release = yaml.full_load(f)
 
-print(subprocess.run(["/bin/bash", "helper", "chart-1"],
-                     capture_output=True))
+for chart in release["charts"]:
+    subprocess.run(["/bin/bash", "helper", chart],
+                        capture_output=True)

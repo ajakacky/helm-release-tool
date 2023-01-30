@@ -13,6 +13,7 @@ ccommits () {
     for c in $commits ; do
     # for c in "refactor: what the heck" "fix: blah" "feat: This is a feature" "docs(asdf): this is a docs change" "build(sdf): This is a deployable unit" "fix!: So is this" ; do
         message=$(git log -n 1 --pretty=format:%s $c)
+        echo $message
         if [[ "$message" =~ ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\!)?(\(.*\)(\!)?)?\: ]]; then
             match_string=$( echo "${BASH_REMATCH%?}" )
             if [[ "$message" =~ [[:space:]].*$ ]]; then
