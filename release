@@ -1,46 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env python
+import subprocess, os, yaml
 
-path="chart-1"
+with open("release.yaml", "r") as f:
+    release = yaml.full_load(f)
 
-major=()
-minor=()
-patch=()
-other=()
-
-parse_sem_ver () {
-    echo $(echo $1 | awk -F. '{ st = index($0,".");print $3}')
-}
-
-ccommits () {
-    commits=$(git rev-list $(echo $(git log -L5,5:$1/Chart.yaml -n 1 --no-abbrev-commit) | awk '{print $2}')..HEAD)
-    for c in $commits ; do
-    # for c in "refactor: what the heck" "fix: blah" "feat: This is a feature" "docs(asdf): this is a docs change" "build(sdf): This is a deployable unit" "fix!: So is this" ; do
-        message=$(git log -n 1 --pretty=format:%s $c)
-        if [[ "$message" =~ ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\!)?(\(.*\)(\!)?)?\: ]]; then
-            match_string=$( echo "${BASH_REMATCH%?}" )
-            if [[ "$message" =~ [[:space:]].*$ ]]; then
-                commit_string=$( echo "${BASH_REMATCH}" | xargs )
-                markdown_link=$(echo "$(git config --get remote.origin.url | sed -e 's/\.git$//g')/commit/$c")
-                case $match_string in
-                    *docs* | *build* | *!)   major+=("$commit_string [(${c:0:8})]($markdown_link)");;
-                    *feat*)                  minor+=("$commit_string [(${c:0:8})]($markdown_link)");;
-                    *fix* | *refactor*)      patch+=("$commit_string [(${c:0:8})]($markdown_link)");;
-                    *)                       other+=("$commit_string [(${c:0:8})]($markdown_link)");;
-                esac
-            fi
-        fi
-    done
-    chart_version=$(grep 'version' $1/Chart.yaml | awk '{print $2}')
-
-    #minor_version=$(echo "${chart_version//[[:digit:]]./}")
-    major_version=$(echo $chart_version | awk -F. '{ st = index($0,".");print $1}')
-    minor_version=$(echo $chart_version | awk -F. '{ st = index($0,".");print $2}')
-    patch_version=$(echo $chart_version | awk -F. '{ st = index($0,".");print $3}')
-
-    echo "${#other[@]}"
-    # major_string=""
-    # echo "
-    # $(cat $path/CHANGELOG.md)" > $path/CHANGELOG.md
-}
-
-ccommits $path
+print(subprocess.run(["/bin/bash", "helper", "chart-1"],
+                     capture_output=True))

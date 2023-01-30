@@ -1,0 +1,68 @@
+#!/bin/bash
+
+changes=""
+
+ccommits () {
+    major=()
+    minor=()
+    patch=()
+    other=()
+
+    line_no=$(awk '/version/{ print NR; exit }' $1/Chart.yaml)
+    commits=$(git rev-list $(echo $(git log -L$line_no,$line_no:$1/Chart.yaml -n 1 --no-abbrev-commit) | awk '{print $2}')..HEAD  -- $1)
+    for c in $commits ; do
+    # for c in "refactor: what the heck" "fix: blah" "feat: This is a feature" "docs(asdf): this is a docs change" "build(sdf): This is a deployable unit" "fix!: So is this" ; do
+        message=$(git log -n 1 --pretty=format:%s $c)
+        if [[ "$message" =~ ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\!)?(\(.*\)(\!)?)?\: ]]; then
+            match_string=$( echo "${BASH_REMATCH%?}" )
+            if [[ "$message" =~ [[:space:]].*$ ]]; then
+                commit_string=$( echo "${BASH_REMATCH}" | xargs )
+                markdown_link=$(echo "$(git config --get remote.origin.url | sed -e 's/\.git$//g')/commit/$c")
+                case $match_string in
+                    *docs* | *build* | *!)      major+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *feat*)                     minor+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *fix* | *refactor*)         patch+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *)                          other+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                esac
+            fi
+        fi
+    done
+    chart_version=$(grep 'version' $1/Chart.yaml | awk '{print $2}')
+
+    #minor_version=$(echo "${chart_version//[[:digit:]]./}")
+    major_v=$(echo $chart_version | awk -F. '{ st = index($0,".");print $1}')
+    minor_v=$(echo $chart_version | awk -F. '{ st = index($0,".");print $2}')
+    patch_v=$(echo $chart_version | awk -F. '{ st = index($0,".");print $3}')
+
+    major_v_up=$(echo "${#major[@]}")
+    minor_v_up=$(echo "${#minor[@]}")
+    patch_v_up=$(echo "${#patch[@]}")
+
+    new_version=$(echo "$(($major_v_up+$major_v)).$(($minor_v_up+$minor_v)).$(($patch_v_up+$patch_v))")
+
+    major_changes=$'## Major Changes\n\n'$(for cng in "${major[@]}"; do echo "$cng"; done)$'\n'
+    minor_changes=$'## Minor Changes\n\n'$(for cng in "${minor[@]}"; do echo "$cng"; done)$'\n'
+    patch_changes=$'## Patch Changes\n\n'$(for cng in "${patch[@]}"; do echo "$cng"; done)$'\n'
+    other_changes=$'## Other Changes\n\n'$(for cng in "${other[@]}"; do echo "$cng"; done)$'\n'
+
+    changelog_version=$(head -1 $1/CHANGELOG.md | awk -Fv '{st = $index($0,"v"); print $2 }')
+
+    if [[ "$changelog_version" != *"$new_version"* ]]; then
+        changes="# v$new_version
+
+$(if [ $major_v_up -gt 0 ]; then echo $"$major_changes"; fi)
+$(if [ $minor_v_up -gt 0 ]; then echo $"$minor_changes"; fi)
+$(if [ $patch_v_up -gt 0 ]; then echo $"$patch_changes"; fi)
+$(if [ ${#other[@]} -gt 0 ]; then echo $"$other_changes"; fi)
+
+$(cat $1/CHANGELOG.md)"
+
+        echo -e "$changes" | awk '!NF {if (++n <= 1) print; next}; {n=0;print}' > $1/CHANGELOG.md
+        chart=$(cat $1/Chart.yaml)
+        echo "${chart//$changelog_version/$new_version}" > $1/Chart.yaml
+    fi
+}
+
+ccommits $1
+
+echo "$changes"
