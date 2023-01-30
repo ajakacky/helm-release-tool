@@ -20,10 +20,10 @@ ccommits () {
                 commit_string=$( echo "${BASH_REMATCH}" | xargs )
                 markdown_link=$(echo "$(git config --get remote.origin.url | sed -e 's/\.git$//g')/commit/$c")
                 case $match_string in
-                    *docs* | *build* | *!)      major+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
-                    *feat*)                     minor+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
-                    *fix* | *refactor*)         patch+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
-                    *)                          other+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *build* | *chore* | *!)                major+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *feat*)                      minor+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *fix* | *refactor*) patch+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
+                    *)                           other+=("- **$match_string** $commit_string [(${c:0:8})]($markdown_link)");;
                 esac
             fi
         fi
